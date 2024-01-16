@@ -3,26 +3,31 @@ pragma solidity 0.8.21;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC4626} from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
+import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import {ICompoundUSDCV3} from "./interfaces/ICompoundUSDCV3.sol";
-import {IReturnFinanceCompoundV3USDCVault} from "./interfaces/IReturnFinanceCompoundV3USDCVault.sol";
+import {ISwapRouter} from "./interfaces/ISwapRouter.sol";
+import {IReturnFinanceSparkUSDCVault} from "./interfaces/IReturnFinanceSparkUSDCVault.sol";
 
 /**
- * @title ReturnFinanceCompoundV3USDCVault
+ * @title Return Finance Spark USDC Vault
  * @author 0xFusion (https://0xfusion.com)
- * @dev ReturnFinanceCompoundV3USDCVault is an ERC4626 compliant vault.
+ * @dev Return Finance Spark USDC Vault is an ERC4626 compliant vault.
  * @dev The ERC4626 "Tokenized Vault Standard" is defined in https://eips.ethereum.org/EIPS/eip-4626[EIP-4626].
  */
-contract ReturnFinanceCompoundV3USDCVault is IReturnFinanceCompoundV3USDCVault, ERC4626, Ownable {
+contract ReturnFinanceSparkUSDCVault is IReturnFinanceSparkUSDCVault, ERC4626, Ownable {
     using SafeERC20 for IERC20;
 
     /* ========== STATE VARIABLES ========== */
 
     address public immutable usdc;
-    address public immutable cUSDCv3;
+    address public immutable dai;
+    address public immutable sDai;
+    address public immutable uniswapV3Router;
+
+    uint256 public slippage;
 
     /**
      * @notice Represents the whitelist of addresses that can interact with this contract
@@ -39,28 +44,35 @@ contract ReturnFinanceCompoundV3USDCVault is IReturnFinanceCompoundV3USDCVault, 
     /* ========== CONSTRUCTOR ========== */
 
     /**
-     * @dev Constructor to initialize the ReturnFinanceCompoundV3USDCVault.
+     * @dev Constructor to initialize the IReturnFinanceSparkV3USDCVault.
      * @param _usdc USDC contract address.
-     * @param _cUSDCv3 Compound USDC V3 contract address.
+     * @param _dai DAI contract address
+     * @param _sDai Spark DAI contract address.
      */
-    constructor(IERC20 _usdc, address _cUSDCv3)
+    constructor(IERC20 _usdc, address _dai, address _sDai, address _uniswapV3Router, uint256 _slippage)
         Ownable(msg.sender)
         ERC4626(_usdc)
-        ERC20("Return Finance Compound USDC V3", "rfcUSDC")
+        ERC20("Return Finance Spark USDC Vault", "rfsUSDC")
     {
         usdc = address(_usdc);
-        cUSDCv3 = _cUSDCv3;
+        dai = _dai;
+        sDai = _sDai;
+        uniswapV3Router = _uniswapV3Router;
+        slippage = _slippage;
 
-        IERC20(usdc).approve(cUSDCv3, type(uint256).max);
+        IERC20(dai).approve(sDai, type(uint256).max);
+        IERC20(dai).approve(uniswapV3Router, type(uint256).max);
+        IERC20(usdc).approve(uniswapV3Router, type(uint256).max);
     }
 
     /* ========== VIEWS ========== */
 
     /**
      * @dev See {IERC4626-totalAssets}.
+     * We assume USDC to DAI is 1:1
      */
     function totalAssets() public view override returns (uint256) {
-        return IERC20(cUSDCv3).balanceOf(address(this));
+        return (IERC4626(sDai).maxWithdraw(address(this)) / 10 ** 12);
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -85,10 +97,10 @@ contract ReturnFinanceCompoundV3USDCVault is IReturnFinanceCompoundV3USDCVault, 
      * @param destination The address where the funds should be sent
      */
     function rescueFunds(address destination) external onlyOwner {
-        uint256 totalCUSDC = totalAssets();
-        ICompoundUSDCV3(cUSDCv3).withdrawTo(destination, usdc, totalCUSDC);
+        uint256 totalDAI = totalAssets();
+        IERC4626(sDai).withdraw(totalDAI, destination, address(this));
 
-        emit RescueFunds(totalCUSDC);
+        emit RescueFunds(totalDAI);
     }
 
     /**
@@ -103,19 +115,62 @@ contract ReturnFinanceCompoundV3USDCVault is IReturnFinanceCompoundV3USDCVault, 
     }
 
     /**
+     * @notice Set slippage when executing an Uniswap trade
+     * @param newSlippage The new slippage configuration
+     */
+    function setSlippage(uint256 newSlippage) external onlyOwner {
+        slippage = newSlippage;
+
+        emit SlippageUpdated(newSlippage);
+    }
+
+    /**
+     * @notice Swap function for the underlying token (USDC) and DAI
+     * @param tokenIn The address of the token to be swapped
+     * @param tokenOut The address of the token to be received
+     * @param amountIn The amount of token to be swapped
+     * @param amountOutMinimum The minimum amount of token to be received
+     * @param swapFee The swap fee
+     * @return amountOut The amount of tokens received from the swap
+     */
+    function _swap(address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOutMinimum, uint24 swapFee)
+        internal
+        returns (uint256 amountOut)
+    {
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+            tokenIn: tokenIn,
+            tokenOut: tokenOut,
+            fee: swapFee,
+            recipient: address(this),
+            deadline: block.timestamp,
+            amountIn: amountIn,
+            amountOutMinimum: amountOutMinimum,
+            sqrtPriceLimitX96: 0
+        });
+
+        amountOut = ISwapRouter(uniswapV3Router).exactInputSingle(params);
+    }
+
+    /**
      * @dev Hook called after a user deposits USDC to the vault.
      * @param assets The amount of USDC to be deposited.
      */
     function _afterDeposit(uint256 assets) internal {
-        ICompoundUSDCV3(cUSDCv3).supply(usdc, assets);
+        uint256 amountOutMinimum = ((10000 - slippage) * (assets * 10 ** 12)) / 10000;
+
+        uint256 daiAmount = _swap(usdc, dai, assets, amountOutMinimum, 100);
+        IERC4626(sDai).deposit(daiAmount, address(this));
     }
 
     /**
      * @dev Hook called before a user withdraws USDC from the vault.
      * @param assets The amount of USDC to be withdrawn.
      */
-    function _beforeWithdraw(uint256 assets) internal {
-        ICompoundUSDCV3(cUSDCv3).withdraw(usdc, assets);
+    function _beforeWithdraw(uint256 assets) internal returns (uint256 usdcAmount) {
+        IERC4626(sDai).withdraw((assets * 10 ** 12), address(this), address(this));
+
+        uint256 amountOutMinimum = ((10000 - slippage) * (assets)) / 10000;
+        usdcAmount = _swap(dai, usdc, assets * 10 ** 12, amountOutMinimum, 100);
     }
 
     /**
@@ -135,7 +190,7 @@ contract ReturnFinanceCompoundV3USDCVault is IReturnFinanceCompoundV3USDCVault, 
         override
     {
         if (!whitelist[_msgSender()]) revert NotInWhitelist(_msgSender());
-        _beforeWithdraw(assets);
-        super._withdraw(caller, receiver, owner, assets, shares);
+        uint256 usdcToWithdraw = _beforeWithdraw(assets);
+        super._withdraw(caller, receiver, owner, usdcToWithdraw, shares);
     }
 }
