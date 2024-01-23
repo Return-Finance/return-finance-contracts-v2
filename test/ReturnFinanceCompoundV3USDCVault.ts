@@ -140,8 +140,6 @@ describe("Return Finance Compound V3 USDC Vault Tests", () => {
     // Travel to the future
     await time.increase(43200);
 
-    const amountToWithdraw = await returnFinanceAaveV3USDCVault.totalAssets();
-
     await returnFinanceAaveV3USDCVault
       .connect(accounts[0])
       .rescueFunds(accounts[0].getAddress());

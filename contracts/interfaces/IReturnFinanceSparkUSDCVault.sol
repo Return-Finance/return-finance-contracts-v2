@@ -2,11 +2,10 @@
 pragma solidity 0.8.21;
 
 interface IReturnFinanceSparkUSDCVault {
-    event FeeUpdated(uint256 newFeeBps);
     event SweepFunds(address token, uint256 amount);
     event PoolDonation(address sender, uint256 value);
     event AddressWhitelisted(address whitelistedAddress, bool isWhitelisted);
-    event RescueFunds(uint256 totalSDAI);
+    event RescueFunds(uint256 totalDai);
     event SlippageUpdated(uint256 newSlippage);
 
     function sweepFunds(address token) external;

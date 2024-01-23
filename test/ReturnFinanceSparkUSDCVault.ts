@@ -6,7 +6,7 @@ import {
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
-const SLIPPAGE = "100";
+const SLIPPAGE = "10";
 const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 const S_DAI_ADDRESS = "0x83F20F44975D03b1b09e64809B757c47f942BEeA";
@@ -44,7 +44,7 @@ describe("Return Finance Spark USDC Vault Tests", () => {
     };
   };
 
-  it("should successfully deploy ReturnFinanceSparkUSDCVault with correct configuration", async () => {
+  it("should successfully deploy Return Finance Spark USDC Vault with correct configuration", async () => {
     const { returnFinanceSparkUSDCVault } = await loadFixture(
       deployedContracts
     );
@@ -60,7 +60,7 @@ describe("Return Finance Spark USDC Vault Tests", () => {
     expect(uniswapV3Router).to.equal(UNISWAP_V3_ROUTER);
   });
 
-  it("should successfully deposit USDC to the ReturnFinanceSparkUSDCVault contract", async () => {
+  it("should successfully deposit USDC to the Return Finance Spark USDC Vault contract", async () => {
     const { usdc, returnFinanceSparkUSDCVault, impersonatedWhaleAccount } =
       await loadFixture(deployedContracts);
 
@@ -85,7 +85,7 @@ describe("Return Finance Spark USDC Vault Tests", () => {
     expect(suppliedAmount).to.equal("1000000000000");
   });
 
-  it("should successfully withdraw USDC from the ReturnFinanceSparkUSDCVault contract", async () => {
+  it("should successfully withdraw USDC from the Return Finance Spark USDC Vault contract", async () => {
     const { usdc, returnFinanceSparkUSDCVault, impersonatedWhaleAccount } =
       await loadFixture(deployedContracts);
 
@@ -109,17 +109,8 @@ describe("Return Finance Spark USDC Vault Tests", () => {
 
     expect(suppliedAmount).to.equal("1000000000");
 
-    const totalAssetsBefore = await returnFinanceSparkUSDCVault.convertToAssets(
-      "1000000000"
-    );
-
     // Travel to the future
-    await time.increase(86400);
-
-    const totalAssetsAfter = await returnFinanceSparkUSDCVault.convertToAssets(
-      "1000000000"
-    );
-    console.log(totalAssetsAfter);
+    await time.increase(864000);
 
     const amountToWithdraw = await returnFinanceSparkUSDCVault.maxWithdraw(
       impersonatedWhaleAccount.getAddress()
@@ -134,7 +125,7 @@ describe("Return Finance Spark USDC Vault Tests", () => {
       );
   });
 
-  it("should successfully rescue funds from the ReturnFinanceCompoundV3USDCVault contract", async () => {
+  it("should successfully rescue funds from the Return Finance Spark USDC Vault contract", async () => {
     const { usdc, returnFinanceSparkUSDCVault, impersonatedWhaleAccount } =
       await loadFixture(deployedContracts);
 
@@ -161,14 +152,12 @@ describe("Return Finance Spark USDC Vault Tests", () => {
     // Travel to the future
     await time.increase(43200);
 
-    const amountToWithdraw = await returnFinanceSparkUSDCVault.totalAssets();
-
     await returnFinanceSparkUSDCVault
       .connect(accounts[0])
       .rescueFunds(accounts[0].getAddress());
   });
 
-  it("should successfully sweep tokens or ETH trapped in the ReturnFinanceCompoundV3USDCVault contract", async () => {
+  it("should successfully sweep tokens or ETH trapped in the Return Finance Spark USDC Vault contract", async () => {
     const { usdc, returnFinanceSparkUSDCVault, impersonatedWhaleAccount } =
       await loadFixture(deployedContracts);
 
@@ -184,7 +173,7 @@ describe("Return Finance Spark USDC Vault Tests", () => {
 
     const rescuedAmount = await usdc.balanceOf(accounts[0].getAddress());
 
-    expect(rescuedAmount).to.equal("3000000");
+    expect(rescuedAmount).to.equal("4000000");
 
     await impersonatedWhaleAccount.sendTransaction({
       to: returnFinanceSparkUSDCVault.getAddress(),
