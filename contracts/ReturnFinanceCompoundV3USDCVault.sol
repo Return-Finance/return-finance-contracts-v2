@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC4626} from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -18,6 +19,7 @@ import {IReturnFinanceCompoundV3USDCVault} from "./interfaces/IReturnFinanceComp
  */
 contract ReturnFinanceCompoundV3USDCVault is IReturnFinanceCompoundV3USDCVault, ERC4626, Ownable {
     using SafeERC20 for IERC20;
+    using Address for address;
 
     /* ========== STATE VARIABLES ========== */
 
@@ -89,6 +91,15 @@ contract ReturnFinanceCompoundV3USDCVault is IReturnFinanceCompoundV3USDCVault, 
         ICompoundUSDCV3(cUSDCv3).withdrawTo(destination, usdc, totalCUSDC);
 
         emit RescueFunds(totalCUSDC);
+    }
+
+    /**
+     * @notice Allow the owner to call an external contract for some reason. E.g. claim an airdrop.
+     * @param target The target contract address
+     * @param data Encoded function data
+     */
+    function callExternalContract(address target, bytes memory data) external onlyOwner {
+        target.functionCall(data);
     }
 
     /**

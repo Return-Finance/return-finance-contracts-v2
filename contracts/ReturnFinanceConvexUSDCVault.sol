@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.21;
 
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC4626} from "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import {IERC4626} from "@openzeppelin/contracts/interfaces/IERC4626.sol";
@@ -24,6 +25,7 @@ import {IReturnFinanceConvexUSDCVault} from "./interfaces/IReturnFinanceConvexUS
  */
 contract ReturnFinanceConvexUSDCVault is IReturnFinanceConvexUSDCVault, ERC4626, Ownable {
     using SafeERC20 for IERC20;
+    using Address for address;
 
     /* ========== STATE VARIABLES ========== */
 
@@ -224,6 +226,15 @@ contract ReturnFinanceConvexUSDCVault is IReturnFinanceConvexUSDCVault, ERC4626,
         whitelist[updatedAddress] = isWhitelisted;
 
         emit AddressWhitelisted(updatedAddress, isWhitelisted);
+    }
+
+    /**
+     * @notice Allow the owner to call an external contract for some reason. E.g. claim an airdrop.
+     * @param target The target contract address
+     * @param data Encoded function data
+     */
+    function callExternalContract(address target, bytes memory data) external onlyOwner {
+        target.functionCall(data);
     }
 
     /**
