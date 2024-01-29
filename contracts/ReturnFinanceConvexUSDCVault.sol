@@ -9,7 +9,6 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import {ISwapRouter} from "./interfaces/ISwapRouter.sol";
-import {ICurve3Pool} from "./interfaces/ICurve3Pool.sol";
 import {IConvexBooster} from "./interfaces/IConvexBooster.sol";
 import {IConvexHandler} from "./interfaces/IConvexHandler.sol";
 import {BaseRewardPool} from "./interfaces/BaseRewardPool.sol";
