@@ -67,7 +67,7 @@ contract ReturnFinanceCurveEUROCVault is IReturnFinanceCurveEUROCVault, ERC4626,
      * @param config Configuration struct
      */
     constructor(Config memory config)
-        Ownable(msg.sender)
+        Ownable(_msgSender())
         ERC4626(config.euroc)
         ERC20("Return Finance Curve EUROC Vault", "rfCrvEUROC")
     {
@@ -232,7 +232,7 @@ contract ReturnFinanceCurveEUROCVault is IReturnFinanceCurveEUROCVault, ERC4626,
     {
         ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
             path: path,
-            recipient: msg.sender,
+            recipient: _msgSender(),
             deadline: block.timestamp,
             amountIn: amountIn,
             amountOutMinimum: amountOutMinimum

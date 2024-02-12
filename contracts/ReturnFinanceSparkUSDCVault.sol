@@ -52,7 +52,7 @@ contract ReturnFinanceSparkUSDCVault is IReturnFinanceSparkUSDCVault, ERC4626, O
      * @param _sDai Spark DAI contract address.
      */
     constructor(IERC20 _usdc, address _dai, address _sDai, address _uniswapV3Router, uint256 _slippage)
-        Ownable(msg.sender)
+        Ownable(_msgSender())
         ERC4626(_usdc)
         ERC20("Return Finance Spark USDC Vault", "rfsUSDC")
     {

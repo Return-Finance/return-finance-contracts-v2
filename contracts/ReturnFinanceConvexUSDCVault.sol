@@ -63,7 +63,7 @@ contract ReturnFinanceConvexUSDCVault is IReturnFinanceConvexUSDCVault, ERC4626,
      * @param config Configuration struct
      */
     constructor(Config memory config)
-        Ownable(msg.sender)
+        Ownable(_msgSender())
         ERC4626(config.usdc)
         ERC20("Return Finance Convex USDC Vault", "rfCvxUSDC")
     {

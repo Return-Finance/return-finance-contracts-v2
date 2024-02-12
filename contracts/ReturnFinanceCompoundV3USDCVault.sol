@@ -46,7 +46,7 @@ contract ReturnFinanceCompoundV3USDCVault is IReturnFinanceCompoundV3USDCVault, 
      * @param _cUSDCv3 Compound USDC V3 contract address.
      */
     constructor(IERC20 _usdc, address _cUSDCv3)
-        Ownable(msg.sender)
+        Ownable(_msgSender())
         ERC4626(_usdc)
         ERC20("Return Finance Compound USDC V3", "rfcUSDC")
     {

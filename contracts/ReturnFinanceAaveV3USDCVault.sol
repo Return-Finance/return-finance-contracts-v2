@@ -48,7 +48,7 @@ contract ReturnFinanceAaveV3USDCVault is IReturnFinanceAaveV3USDCVault, ERC4626,
      * @param _aEthUSDC Aave Ethereum USDC address.
      */
     constructor(IERC20 _usdc, address _aaveV3Pool, address _aEthUSDC)
-        Ownable(msg.sender)
+        Ownable(_msgSender())
         ERC4626(_usdc)
         ERC20("Return Finance Aave USDC V3", "rfAEthUSDC")
     {
