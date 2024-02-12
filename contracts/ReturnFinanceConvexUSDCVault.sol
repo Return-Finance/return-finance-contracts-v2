@@ -80,15 +80,6 @@ contract ReturnFinanceConvexUSDCVault is IReturnFinanceConvexUSDCVault, ERC4626,
         uniswapV3Router = config.uniswapV3Router;
         chainlinkDataFeedCVXUSD = config.chainlinkDataFeedCVXUSD;
         chainlinkDataFeedCRVUSD = config.chainlinkDataFeedCRVUSD;
-
-        IERC20(usdc).approve(curveDepositZap, type(uint256).max);
-        IERC20(usdc).approve(uniswapV3Router, type(uint256).max);
-
-        IERC20(crv).approve(uniswapV3Router, type(uint256).max);
-        IERC20(cvx).approve(uniswapV3Router, type(uint256).max);
-
-        IERC20(curveLpToken).approve(convexBooster, type(uint256).max);
-        IERC20(curveLpToken).approve(curveDepositZap, type(uint256).max);
     }
 
     /* ========== VIEWS ========== */
@@ -287,6 +278,9 @@ contract ReturnFinanceConvexUSDCVault is IReturnFinanceConvexUSDCVault, ERC4626,
 
         // Swap only if there's anything to swap
         if (crvRewards > 0 && cvxRewards > 0) {
+            // Approve Uniswap V3 Router to move CRV and CVX
+            IERC20(crv).approve(uniswapV3Router, crvRewards);
+            IERC20(cvx).approve(uniswapV3Router, cvxRewards);
             // Swap CRV and CVX for USDC
             uint256 usdcReceivedFromCRV = _swap(crv, usdc, crvRewards, 0, uniswapFee);
             uint256 usdcReceivedFromCVX = _swap(cvx, usdc, cvxRewards, 0, uniswapFee);
@@ -321,6 +315,9 @@ contract ReturnFinanceConvexUSDCVault is IReturnFinanceConvexUSDCVault, ERC4626,
         // Get the amount of LP tokens after withdraw form Convex
         uint256 lpTokensToWithdraw = IERC20(curveLpToken).balanceOf(address(this));
 
+        // Approve Deposit Zap contract to move Curve LP tokens
+        IERC20(curveLpToken).approve(curveDepositZap, lpTokensToWithdraw);
+
         // Remove liquidity from Curve and receive the underlying token (USDC)
         I3CrvMetaPoolZap(curveDepositZap).remove_liquidity_one_coin(curveLpToken, lpTokensToWithdraw, 2, 0);
     }
@@ -332,8 +329,14 @@ contract ReturnFinanceConvexUSDCVault is IReturnFinanceConvexUSDCVault, ERC4626,
         // Get remaining USDC in the pool
         uint256 assetsToDeposit = IERC20(usdc).balanceOf(address(this));
 
+        // Approve the Deposit Zap contract to spend USDC
+        IERC20(usdc).approve(curveDepositZap, assetsToDeposit);
+
         // Add the availanle USDC as liquidity to Curve
         I3CrvMetaPoolZap(curveDepositZap).add_liquidity(curveLpToken, [0, 0, assetsToDeposit, 0], 0);
+
+        // Approve Convex Booster contract to move Curve LP tokens
+        IERC20(curveLpToken).approve(convexBooster, IERC20(curveLpToken).balanceOf(address(this)));
 
         // Deposit the Curve LP tokens to Convex Finance
         IConvexBooster(convexBooster).depositAll(convexPoolId, true);

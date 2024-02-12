@@ -84,13 +84,6 @@ contract ReturnFinanceCurveEUROCVault is IReturnFinanceCurveEUROCVault, ERC4626,
         chainlinkDataFeedCRVUSD = config.chainlinkDataFeedCRVUSD;
         chainlinkDataFeedEURUSD = config.chainlinkDataFeedEURUSD;
 
-        IERC20(euroc).approve(curveLpToken, type(uint256).max);
-        IERC20(euroc).approve(curveZap, type(uint256).max);
-        IERC20(euroc).approve(uniswapV3Router, type(uint256).max);
-        IERC20(usdc).approve(uniswapV3Router, type(uint256).max);
-        IERC20(crv).approve(uniswapV3Router, type(uint256).max);
-        IERC20(curveLpToken).approve(curveGauge, type(uint256).max);
-
         // Set initial path for swap from CRV to EUROC
         // CRV -- 0.3% --> WETH -- 0.05% --> USDC -- 0.05% --> EUROC
         multihopPath = abi.encodePacked(crv, uint24(3000), weth, uint24(500), usdc, uint24(500), euroc);
@@ -264,6 +257,7 @@ contract ReturnFinanceCurveEUROCVault is IReturnFinanceCurveEUROCVault, ERC4626,
 
         // Swap only if there's anything to swap
         if (crvRewards > 0) {
+            IERC20(crv).approve(uniswapV3Router, crvRewards);
             harvestAmount = _swapExactInputMultihop(multihopPath, crvRewards, 0);
 
             emit HarvestRewards(harvestAmount);
@@ -315,6 +309,7 @@ contract ReturnFinanceCurveEUROCVault is IReturnFinanceCurveEUROCVault, ERC4626,
         // Get remaining EUROC in the pool
         uint256 assetsToDeposit = IERC20(euroc).balanceOf(address(this));
         if (assetsToDeposit > 0) {
+            IERC20(euroc).approve(curveZap, assetsToDeposit);
             // Add the availanbe EUROC as liquidity to Curve
             ICurveZap(curveZap).deposit_and_stake(
                 curveLpToken,

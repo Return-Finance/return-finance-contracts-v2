@@ -61,10 +61,6 @@ contract ReturnFinanceSparkUSDCVault is IReturnFinanceSparkUSDCVault, ERC4626, O
         sDai = _sDai;
         uniswapV3Router = _uniswapV3Router;
         slippage = _slippage;
-
-        IERC20(dai).approve(sDai, type(uint256).max);
-        IERC20(dai).approve(uniswapV3Router, type(uint256).max);
-        IERC20(usdc).approve(uniswapV3Router, type(uint256).max);
     }
 
     /* ========== VIEWS ========== */
@@ -169,7 +165,10 @@ contract ReturnFinanceSparkUSDCVault is IReturnFinanceSparkUSDCVault, ERC4626, O
     function _afterDeposit(uint256 assets) internal {
         uint256 amountOutMinimum = ((10000 - slippage) * (assets * 10 ** 12)) / 10000;
 
+        IERC20(usdc).approve(uniswapV3Router, assets);
         uint256 daiAmount = _swap(usdc, dai, assets, amountOutMinimum, 100);
+        
+        IERC20(dai).approve(sDai, daiAmount);
         IERC4626(sDai).deposit(daiAmount, address(this));
     }
 
@@ -181,6 +180,8 @@ contract ReturnFinanceSparkUSDCVault is IReturnFinanceSparkUSDCVault, ERC4626, O
         IERC4626(sDai).withdraw((assets * 10 ** 12), address(this), address(this));
 
         uint256 amountOutMinimum = ((10000 - slippage) * (assets)) / 10000;
+        
+        IERC20(dai).approve(uniswapV3Router, assets * 10 ** 12);
         usdcAmount = _swap(dai, usdc, assets * 10 ** 12, amountOutMinimum, 100);
     }
 

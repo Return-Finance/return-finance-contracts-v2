@@ -52,8 +52,6 @@ contract ReturnFinanceCompoundV3USDCVault is IReturnFinanceCompoundV3USDCVault, 
     {
         usdc = address(_usdc);
         cUSDCv3 = _cUSDCv3;
-
-        IERC20(usdc).approve(cUSDCv3, type(uint256).max);
     }
 
     /* ========== VIEWS ========== */
@@ -118,6 +116,7 @@ contract ReturnFinanceCompoundV3USDCVault is IReturnFinanceCompoundV3USDCVault, 
      * @param assets The amount of USDC to be deposited.
      */
     function _afterDeposit(uint256 assets) internal {
+        IERC20(usdc).approve(cUSDCv3, assets);
         ICompoundUSDCV3(cUSDCv3).supply(usdc, assets);
     }
 

@@ -55,8 +55,6 @@ contract ReturnFinanceAaveV3USDCVault is IReturnFinanceAaveV3USDCVault, ERC4626,
         usdc = address(_usdc);
         aaveV3Pool = _aaveV3Pool;
         aEthUSDC = _aEthUSDC;
-
-        IERC20(usdc).approve(aaveV3Pool, type(uint256).max);
     }
 
     /* ========== VIEWS ========== */
@@ -121,6 +119,7 @@ contract ReturnFinanceAaveV3USDCVault is IReturnFinanceAaveV3USDCVault, ERC4626,
      * @param assets The amount of USDC to be deposited.
      */
     function _afterDeposit(uint256 assets) internal {
+        IERC20(usdc).approve(aaveV3Pool, assets);
         IAaveV3Pool(aaveV3Pool).supply(usdc, assets, address(this), 0);
     }
 
