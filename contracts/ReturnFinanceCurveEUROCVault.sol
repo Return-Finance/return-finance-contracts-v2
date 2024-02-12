@@ -16,7 +16,6 @@ import {ICurveZap} from "./interfaces/ICurveZap.sol";
 import {ICurveMinter} from "./interfaces/ICurveMinter.sol";
 import {AggregatorV3Interface} from "./interfaces/AggregatorV3Interface.sol";
 import {IReturnFinanceCurveEUROCVault} from "./interfaces/IReturnFinanceCurveEUROCVault.sol";
-import "hardhat/console.sol";
 
 /**
  * @title Return Finance Curve EUROC Vault
@@ -72,6 +71,7 @@ contract ReturnFinanceCurveEUROCVault is IReturnFinanceCurveEUROCVault, ERC4626,
         ERC20("Return Finance Curve EUROC Vault", "rfCrvEUROC")
     {
         euroc = address(config.euroc);
+        ageur = config.ageur;
         usdc = config.usdc;
         crv = config.crv;
         weth = config.weth;
