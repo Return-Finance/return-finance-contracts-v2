@@ -129,8 +129,17 @@ contract ReturnFinanceCurveEUROCVault is IReturnFinanceCurveEUROCVault, ERC4626,
      * @return answer The price of CRV denominated in EURO
      */
     function crvPriceEUR() public view returns (int256 answer) {
-        (, int256 crvPriceUSD,,,) = AggregatorV3Interface(chainlinkDataFeedCRVUSD).latestRoundData();
-        (, int256 eurPriceUSD,,,) = AggregatorV3Interface(chainlinkDataFeedEURUSD).latestRoundData();
+        (uint80 roundId, int256 crvPriceUSD, uint256 startedAt,, uint80 answeredInRound) =
+            AggregatorV3Interface(chainlinkDataFeedCRVUSD).latestRoundData();
+        if (crvPriceUSD <= 0) revert ChainlinkPriceZero();
+        if (startedAt == 0) revert ChainlinkIncompleteRound();
+        if (answeredInRound < roundId) revert ChainlinkStalePrice();
+
+        (uint80 _roundId, int256 eurPriceUSD, uint256 _startedAt,, uint80 _answeredInRound) =
+            AggregatorV3Interface(chainlinkDataFeedEURUSD).latestRoundData();
+        if (eurPriceUSD <= 0) revert ChainlinkPriceZero();
+        if (_startedAt == 0) revert ChainlinkIncompleteRound();
+        if (_answeredInRound < _roundId) revert ChainlinkStalePrice();
 
         answer = (crvPriceUSD * eurPriceUSD) / 1e8;
     }

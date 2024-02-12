@@ -36,4 +36,7 @@ interface IReturnFinanceConvexUSDCVault {
 
     error UnableToSweep(address token);
     error NotInWhitelist(address wrongAddress);
+    error ChainlinkPriceZero();
+    error ChainlinkIncompleteRound();
+    error ChainlinkStalePrice();
 }

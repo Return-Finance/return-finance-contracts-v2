@@ -146,7 +146,11 @@ contract ReturnFinanceConvexUSDCVault is IReturnFinanceConvexUSDCVault, ERC4626,
      * @return The price of CRV denominated in USD
      */
     function crvPriceUSD() public view returns (int256) {
-        (, int256 answer,,,) = AggregatorV3Interface(chainlinkDataFeedCRVUSD).latestRoundData();
+        (uint80 roundId, int256 answer, uint256 startedAt,, uint80 answeredInRound) =
+            AggregatorV3Interface(chainlinkDataFeedCRVUSD).latestRoundData();
+        if (answer <= 0) revert ChainlinkPriceZero();
+        if (startedAt == 0) revert ChainlinkIncompleteRound();
+        if (answeredInRound < roundId) revert ChainlinkStalePrice();
 
         return answer;
     }
@@ -156,7 +160,11 @@ contract ReturnFinanceConvexUSDCVault is IReturnFinanceConvexUSDCVault, ERC4626,
      * @return The price of CVX denominated in USD
      */
     function cvxPriceUSD() public view returns (int256) {
-        (, int256 answer,,,) = AggregatorV3Interface(chainlinkDataFeedCVXUSD).latestRoundData();
+        (uint80 roundId, int256 answer, uint256 startedAt,, uint80 answeredInRound) =
+            AggregatorV3Interface(chainlinkDataFeedCVXUSD).latestRoundData();
+        if (answer <= 0) revert ChainlinkPriceZero();
+        if (startedAt == 0) revert ChainlinkIncompleteRound();
+        if (answeredInRound < roundId) revert ChainlinkStalePrice();
 
         return answer;
     }
