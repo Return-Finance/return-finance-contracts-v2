@@ -21,6 +21,11 @@ const config: HardhatUserConfig = {
       url: `https://goerli.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [process.env.WALLET_PK || ""],
     },
+    polygon: {
+      chainId: 137,
+      url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+      accounts: [process.env.WALLET_PK || ""],
+    },
     hardhat: {
       forking: {
         url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,

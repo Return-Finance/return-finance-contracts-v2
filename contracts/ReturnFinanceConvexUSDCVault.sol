@@ -12,6 +12,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {ISwapRouter} from "./interfaces/ISwapRouter.sol";
 import {IConvexBooster} from "./interfaces/IConvexBooster.sol";
 import {IConvexHandler} from "./interfaces/IConvexHandler.sol";
+import {ICurvePool} from "./interfaces/ICurvePool.sol";
 import {BaseRewardPool} from "./interfaces/BaseRewardPool.sol";
 import {I3CrvMetaPoolZap} from "./interfaces/IMetaPoolZap.sol";
 import {AggregatorV3Interface} from "./interfaces/AggregatorV3Interface.sol";
@@ -94,18 +95,11 @@ contract ReturnFinanceConvexUSDCVault is IReturnFinanceConvexUSDCVault, ERC4626,
      * The amount is reduced by 1%, to account for Uniswap fees/slippage
      */
     function totalAssets() public view override returns (uint256) {
-        if (stakedLpInConvex() > 0) {
-            return (
-                I3CrvMetaPoolZap(curveDepositZap).calc_withdraw_one_coin(curveLpToken, stakedLpInConvex(), 2)
-                    + IERC20(usdc).balanceOf(address(this)) + (earnedCVX() * uint256(cvxPriceUSD()) / 1e20)
-                    + (earnedCRV() * uint256(crvPriceUSD()) / 1e20)
-            ) * (1000000 - uniswapFee) / 1000000;
-        } else {
-            return (
-                IERC20(usdc).balanceOf(address(this)) + (earnedCVX() * uint256(cvxPriceUSD()) / 1e20)
-                    + (earnedCRV() * uint256(crvPriceUSD()) / 1e20)
-            ) * (1000000 - uniswapFee) / 1000000;
-        }
+        return (
+            (stakedLpInConvex() * ICurvePool(curveLpToken).get_virtual_price() / 1e30)
+                + IERC20(usdc).balanceOf(address(this)) + (earnedCVX() * uint256(cvxPriceUSD()) / 1e20)
+                + (earnedCRV() * uint256(crvPriceUSD()) / 1e20)
+        ) * (1000000 - uniswapFee) / 1000000;
     }
 
     /**
