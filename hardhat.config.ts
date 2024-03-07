@@ -6,7 +6,7 @@ import "solidity-coverage";
 import "hardhat-contract-sizer";
 import "hardhat-gas-reporter";
 
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 dotenv.config();
 
 const config: HardhatUserConfig = {
@@ -26,10 +26,20 @@ const config: HardhatUserConfig = {
       url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [process.env.WALLET_PK || ""],
     },
+    base: {
+      chainId: 8453,
+      url: `https://mainnet.base.org/`,
+      accounts: [process.env.WALLET_PK || ""],
+    },
+    avalanche: {
+      chainId: 43114,
+      url: `https://api.avax.network/ext/bc/C/rpc`,
+      accounts: [process.env.WALLET_PK || ""],
+    },
     hardhat: {
       forking: {
         url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
-        blockNumber: 19091700
+        blockNumber: 19091700,
       },
       accounts: {
         count: 150,
@@ -37,7 +47,22 @@ const config: HardhatUserConfig = {
     },
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
+    apiKey: {
+      mainnet: process.env.ETHERSCAN_API_KEY || "",
+      base: process.env.BASESCAN_API_KEY || "",
+      avalanche: process.env.SNOWTRACE_API_KEY || "",
+    },
+    customChains: [
+      {
+        network: "avalanche",
+        chainId: 43114,
+        urls: {
+          apiURL:
+            "https://api.routescan.io/v2/network/mainnet/evm/43114/etherscan",
+          browserURL: "https://snowtrace.io",
+        },
+      },
+    ],
   },
   solidity: {
     compilers: [
